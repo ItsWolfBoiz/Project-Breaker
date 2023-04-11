@@ -1,4 +1,4 @@
-using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -11,11 +11,19 @@ public class GameManager : MonoBehaviour
     public Text livesText;
     public Text scoreText;
     public GameObject gameOverPanel;
+    public GameObject winPanel;
+    public GameObject startGamePanel;
+    public bool win;
+    public bool gameOver;
+    private bool gameStarted;
+    public AudioClip gameOverClip;
+    public AudioClip buttonClickedClip;
 
-    public Ball ball {get; private set;}
+    public Ball ball { get; private set; }
     public Paddle paddle { get; private set; }
     public Brick[] bricks { get; private set; }
 
+    public static GameManager Instance;
 
     private void Awake()
     {
@@ -25,16 +33,31 @@ public class GameManager : MonoBehaviour
 
     private void Start()
     {
-        NewGame();
         livesText.text = "Lives: " + lives;
         scoreText.text = "Score: " + score;
     }
 
-    private void NewGame()
+    public void Update()
     {
-        this.score = 0;
-        this.lives = 3;
-        LoadLevel(1);
+        if (Input.GetKeyDown(KeyCode.Space) && !gameStarted)
+        {
+            gameStarted = true;
+            StartGame();
+            LoadLevel(1);
+            startGamePanel.SetActive(false);
+        }
+    }
+
+    private void StartGame()
+    {
+        if (ball != null)
+        {
+            ball.ResetBall();
+        }
+        if (paddle != null)
+        {
+            paddle.ResetPaddle();
+        }
     }
 
     private void LoadLevel(int level)
@@ -50,11 +73,17 @@ public class GameManager : MonoBehaviour
         this.bricks = FindObjectsOfType<Brick>();
     }
 
-    public void UpdateLives(int changeInLives)
+    public void UpdateLives(int livesChange)
     {
-        lives += changeInLives;
-
+        lives += livesChange;
         livesText.text = "Lives: " + lives;
+
+        if (lives <= 0)
+        {
+            gameOver = true;
+            gameOverPanel.SetActive(true);
+            ball.GetComponent<Rigidbody2D>().Sleep();
+        }
     }
 
     public void UpdateScore(int points)
@@ -73,48 +102,84 @@ public class GameManager : MonoBehaviour
 
     public void Miss()
     {
-        this.lives--;
-        
-        if (this.lives > 0)
+        lives--;
+        livesText.text = "Lives: " + lives;
+
+        if (lives <= 0)
         {
-            ResetLevel();
+            gameOver = true;
+            gameOverPanel.SetActive(true);
+            AudioSource.PlayClipAtPoint(gameOverClip, Camera.main.transform.position);
         }
-        else 
+        else
         {
-            GameOver();
+            ball.ResetBall();
+            paddle.ResetPaddle();
         }
     }
 
-
-
-    public void GameOver()
+    public void PlayAgain()
     {
-        this.ball.gameOver = false;
-        gameOverPanel.SetActive(true);
-        NewGame();
+        Restart();
+        StartCoroutine(PlayButtonClickSound());
+    }
+    private IEnumerator PlayButtonClickSound()
+    {
+        yield return new WaitForSeconds(0.1f);
+        AudioSource.PlayClipAtPoint(buttonClickedClip, transform.position);
+    }
+
+    public void Quit()
+    {
+        StartCoroutine(PlayButtonClickSound());
+        Application.Quit();
+        Debug.Log("Game Quit");
+
     }
 
     public void Hit(Brick brick)
     {
-        this.score += brick.points;
+        score += brick.points;
+        scoreText.text = "Score: " + score;
 
-        if (Cleared())
+        if (CheckWin())
         {
-            LoadLevel(this.level + 1);
+            win = true;
+            winPanel.SetActive(true);
+            ball.GetComponent<Rigidbody2D>().Sleep();
         }
+
     }
 
-    private bool Cleared()
+    public bool CheckWin()
     {
-        for(int i =0; i < this.bricks.Length; i++)
+        foreach (Brick brick in bricks)
         {
-            if (this.bricks[i].gameObject.activeInHierarchy && !this.bricks[i].unbreakable)
+            if (!brick.unbreakable && brick.gameObject.activeSelf)
             {
                 return false;
             }
         }
 
         return true;
+    }
+
+    public void Restart()
+    {
+        SceneManager.LoadScene("Level" + level);
+        gameOverPanel.SetActive(false);
+        winPanel.SetActive(false);
+        lives = 3;
+        score = 0;
+        gameStarted = false;
+        livesText.text = "Lives: " + lives;
+        scoreText.text = "Score: " + score;
+    }
+
+    public void MainMenu()
+    {
+        SceneManager.LoadScene("Main Menu");
+        winPanel.SetActive(false);
     }
 
 }

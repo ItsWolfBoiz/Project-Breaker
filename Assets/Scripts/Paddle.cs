@@ -6,10 +6,18 @@ public class Paddle : MonoBehaviour
     public Vector2 direction { get; private set; }
     public float speed = 30f;
     public float maxBounceAngle = 75f;
+    public AudioClip paddleHitClip;
+    private AudioSource paddleHitAudioSource;
 
     private void Awake()
     {
         this.rigidbody = GetComponent<Rigidbody2D>();
+    }
+
+    private void Start()
+    {
+        paddleHitAudioSource = gameObject.AddComponent<AudioSource>();
+        paddleHitAudioSource.clip = paddleHitClip;
     }
 
     public void ResetPaddle()
@@ -58,7 +66,12 @@ public class Paddle : MonoBehaviour
 
             Quaternion rotation = Quaternion.AngleAxis(newAngle, Vector3.forward);
             ball.rigidbody.velocity = rotation * Vector2.up * ball.rigidbody.velocity.magnitude;
+            
+            paddleHitAudioSource.Play();
         }
+
+        
+
     }
 
 }

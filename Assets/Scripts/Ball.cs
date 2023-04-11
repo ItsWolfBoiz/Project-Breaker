@@ -4,7 +4,13 @@ public class Ball : MonoBehaviour
 {
     public new Rigidbody2D rigidbody { get; private set; }
     public float speed = 10f;
-    public bool gameOver;
+    private GameManager gameManager;
+    public AudioClip wallHitClip;
+    public AudioClip brickHitClip;
+
+    private AudioSource wallHitAudioSource;
+    private AudioSource brickHitAudioSource;
+
 
     private void Awake()
     {
@@ -14,13 +20,31 @@ public class Ball : MonoBehaviour
     private void Start()
     {
         ResetBall();
+        wallHitAudioSource = gameObject.AddComponent<AudioSource>();
+        wallHitAudioSource.clip = wallHitClip;
+
+        brickHitAudioSource = gameObject.AddComponent<AudioSource>();
+        brickHitAudioSource.clip = brickHitClip;
     }
 
     private void Update()
     {
-        if (gameOver)
+        
+    }
+
+    void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Wall"))
         {
-            SetRandomTrajectory();
+            wallHitAudioSource.volume = 0.5f;
+            wallHitAudioSource.pitch = 0.8f;
+            wallHitAudioSource.PlayDelayed(-0.5f);
+            wallHitAudioSource.Play();
+        }
+        else if (collision.gameObject.CompareTag("Brick"))
+        {
+            brickHitAudioSource.volume = .8f;
+            brickHitAudioSource.Play();
         }
     }
 
@@ -28,7 +52,6 @@ public class Ball : MonoBehaviour
     {
         this.transform.position = Vector2.zero;
         this.rigidbody.velocity = Vector2.zero;
-        
         Invoke(nameof(SetRandomTrajectory), 1f);
     }
 
@@ -44,7 +67,7 @@ public class Ball : MonoBehaviour
     //Ball slowing down fix
     private void FixedUpdate()
     {
-        rigidbody.velocity = rigidbody.velocity.normalized * speed;
+        rigidbody.velocity = rigidbody.velocity.normalized * speed;   
     }
 
 }

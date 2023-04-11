@@ -1,6 +1,4 @@
-using System;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class Brick : MonoBehaviour
 {
@@ -60,7 +58,6 @@ public class Brick : MonoBehaviour
         {
             Instantiate(explosion, this.transform.position, this.transform.rotation);
         }
-
         
     }
 }
